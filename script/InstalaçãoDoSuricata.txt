@@ -1,0 +1,79 @@
+	Instalação e Configuração Básica do Suricata:
+
+	Instalação: O Suricata pode ser instalado a partir dos repositórios da distribuição:
+
+		apt install suricata -y
+
+	Download de Regras para uma detecção eficaz, é fundamental utilizar um conjunto de regras atualizado, as regras 
+	Emerging Threats(ET) Open são uma escolha popular e de código aberto, o download e a extração podem ser feitos da seguinte forma:
+
+	cd /tmp/
+	curl -LO https://rules.emergingthreats.net/open/suricata-6.0.8/emerging.rules.tar.gz 
+	# Verificar a versao mais recente
+		tar -xvzf emerging.rules.tar.gz
+		mkdir -p /etc/suricata/rules
+		mv rules/*.rules /etc/suricata/rules/
+		chmod 640 /etc/suricata/rules/*.rules
+
+
+	Configuração do /etc/suricata/suricata.yaml, o arquivo de configuração principal do Suricata é suricata.yaml. 
+
+	As seguintes seções são cruciais para a integração com o Wazuh e o monitoramento IPv6:
+
+	HOME\_NET e EXTERNAL\_NET:
+
+    Definir as redes interna e externa para otimizar a detecção e reduzir falsos positivos, para IPv6, isso incluirá os prefixos IPv6 da rede local.
+
+	# Exemplo para IPv6
+		HOME_NET: "[::1]/128, [fe80::]/10, [fd00::]/8, [2001:db8:1::]/64"
+	# Ajustar conforme a rede local
+		EXTERNAL_NET: "any"
+
+
+	Default-rule-path e rule-files: 
+    
+    Apontar para o diretório onde as regras foram salvas.
+
+	default-rule-path: /etc/suricata/rules
+		rule-files:
+		- "*.rules"
+
+	Af-packet: 
+    
+    Configurar o Suricata para capturar pacotes diretamente da interface de rede, é importante especificar a interface correta que monitora 
+o tráfego da rede IoT (eth0 ou eth1, dependendo da topologia).
+
+	af-packet:
+	- interface: eth0 # Interface de rede a ser monitorada
+    threads: 1
+    defrag: yes
+    cluster-type: cluster_flow
+    cluster-id: 99
+    copy-mode: ips # Ou tap para modo IDS puro
+    copy-iface: eth0
+
+
+    Outputs:
+    
+    Configurar a saída dos alertas para o formato JSON (eve.json), que é facilmente parseado pelo Wazuh Agent.
+
+
+	outputs:
+	- eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      # Apenas eventos que queremos enviar para o Wazuh
+      types:
+        - alert
+        - anomaly
+        - flow
+        - dns
+        - http
+        - tls
+        - ssh
+
+	Reiniciar o Serviço: 
+	Após as alterações, reiniciar o serviço Suricata para aplicar a nova configuração:
+
+	systemctl restart suricata

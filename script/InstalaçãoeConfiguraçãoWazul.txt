@@ -1,0 +1,38 @@
+	Instalação e Configuração do Wazuh Agent:
+
+	O Wazuh Agent pode ser instalado seguindo a documentação oficial, que geralmente envolve adicionar o repositório Wazuh e instalar o pacote:
+
+		curl -sO https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.x.x-1_amd64.deb 
+	# Ajustar para a versão e arquitetura ARM
+		sudo WAZUH_MANAGER='<IP_DO_WAZUH_MANAGER>' dpkg -i wazuh-agent_4.x.x-1_amd64.deb
+		sudo systemctl daemon-reload
+		sudo systemctl enable wazuh-agent
+		sudo systemctl start wazuh-agent
+
+
+	Para arquiteturas ARM (como Raspberry Pi), o pacote .deb deve ser o arm64 ou armhf correspondente.
+
+	Configuração do ossec.conf:
+
+	O arquivo de configuração principal do agente é 
+	
+	/var/ossec/etc/ossec.conf.
+
+	Para integrar os logs do Suricata, é necessário adicionar uma seção <localfile> que aponte para o arquivo eve.json gerado pelo Suricata:
+
+	<!-- /var/ossec/etc/ossec.conf -->
+	<ossec_config>
+	...
+		<localfile>
+			<log_format>json</log_format>
+			<location>/var/log/suricata/eve.json</location>
+		</localfile>
+	...
+	</ossec_config>
+
+	Reiniciar o Agente: 
+
+	Após a modificação do ossec.conf, o agente Wazuh deve ser reiniciado para que as alterações sejam aplicadas:
+
+	systemctl restart wazuh-agent
+
