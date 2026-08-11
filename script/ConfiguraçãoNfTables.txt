@@ -1,0 +1,13 @@
+	Configuração do nftables:
+
+	A configuração do nftables é definida em um arquivo, tipicamente /etc/nftables.conf. 
+	A estrutura básica para um firewall IPv6 inclui a criação de uma tabela da família ip6 (ou inet para dual-stack) 
+	e cadeias (chains) para os ganchos (hooks) input, forward e output.
+
+	O script a seguir demonstra uma configuração básica de firewall IPv6 utilizando nftables, incluindo a definição 
+	de um conjunto dinâmico (set) para a blacklist:
+
+	o arquivo nftables.sh é um script nftables modelo para os gateway.
+
+	systemctl enable nftables
+	systemctl start nftables
