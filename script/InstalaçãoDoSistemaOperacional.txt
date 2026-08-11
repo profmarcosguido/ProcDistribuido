@@ -1,0 +1,59 @@
+	Instalação Mínima: 
+	
+	Realizar uma instalação mínima do sistema operacional para reduzir a superfície de ataque e otimizar o uso de recursos.
+	
+	Atualizações: Manter o sistema operacional e todos os pacotes atualizados regularmente: 
+    
+    apt update && apt upgrade -y
+    
+    Configuração de Rede: 
+	
+	Configurar as duas interfaces de rede (ou sub-interfaces VLAN) para operar em modos distintos, 
+	uma para a rede externa/WAN e outra para a rede interna/LAN IoT. 
+    
+    Exemplo de configuração para as duas interfaces:
+    
+	# --- Interface LAN (eth0) ---
+		auto eth0
+	# IPv4 Estatico
+		iface eth0 inet static
+		address 192.168.1.1/24
+
+	# IPv6 Estatico
+		iface eth0 inet6 static
+		address 2001:db8:1::1/64
+		accept_ra 0
+    # Omitimos o gateway aqui para evitar conflito com a WAN
+
+	# --- Interface WAN (eth1) --- 
+		auto eth1
+	# IPv4 via DHCP
+		iface eth1 inet dhcp
+
+	# IPv6 Dinamico (SLAAC + RA + DHCPv6)
+		iface eth1 inet6 auto
+        dhcp 1
+        accept_ra 2
+
+
+    Após a configuração, aplicar:
+     
+		systemctl restart networking
+    
+    
+    Habilitação de Encaminhamento IPv6: 
+	
+	Para que o Raspberry Pi atue como um roteador/gateway, o encaminhamento de pacotes IPv6 deve ser habilitado:
+    
+    # 1. Adiciona a configuração de forma permanente no arquivo sysctl.conf
+		echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.conf
+		echo "net.ipv6.conf.default.forwarding=1" | sudo tee -a /etc/sysctl.conf
+	# 2. Aplica as alterações imediatamente sem precisar reiniciar
+		sudo sysctl -p
+    
+
+	Para fins acadêmico a sobreposição de prefixos (Overlap) a probabilidade é Baixa.
+	Ocorre se o prefixo da sua LAN (2001:db8:1::/64) for o mesmo prefixo que o seu provedor entrega na WAN (eth1), 
+existe o risco se o provedor usar o prefixo da WAN para algo que colida com sua LAN interna, para prevenção a 
+documentação do IPv6 sugere usar o intervalo Unique Local Address(ULA), que começa com fd00::/8 \cite{rfc4193}, 
+o prefixo 2001:db8::/32 que usamos no exemplo é apenas para documentação acadêmica.
